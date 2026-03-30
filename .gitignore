@@ -9,3 +9,6 @@ yarn-debug.log*
 yarn-error.log*
 out
 coverage
+
+.vercel
+.env*.local
