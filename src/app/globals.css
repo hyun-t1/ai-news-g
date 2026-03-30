@@ -322,6 +322,16 @@ input {
 .card-layer {
   position: relative;
   z-index: 2;
+  pointer-events: none;
+}
+
+.interest-row,
+.interest-button {
+  pointer-events: auto;
+}
+
+.is-clickable {
+  cursor: pointer;
 }
 
 .news-card h3,

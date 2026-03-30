@@ -301,7 +301,31 @@ export function Dashboard({ initialData }: DashboardProps) {
 
           <div className="breaking-grid">
             {breakingNews.map((item) => (
-              <article className="highlight-card" key={item.id}>
+              <article
+                className="highlight-card is-clickable"
+                key={item.id}
+                onClick={(event) => {
+                  if (isInteractiveTarget(event.target)) {
+                    return;
+                  }
+
+                  window.open(item.url, "_blank", "noopener,noreferrer");
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") {
+                    return;
+                  }
+
+                  if (isInteractiveTarget(event.target)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  window.open(item.url, "_blank", "noopener,noreferrer");
+                }}
+                role="link"
+                tabIndex={0}
+              >
                 <a
                   aria-label={`${item.titleKo} 원문 열기`}
                   className="card-link-overlay"
@@ -344,7 +368,31 @@ export function Dashboard({ initialData }: DashboardProps) {
 
           <div className="highlight-grid">
             {dailyHighlights.map((item) => (
-              <article className="highlight-card" key={item.id}>
+              <article
+                className="highlight-card is-clickable"
+                key={item.id}
+                onClick={(event) => {
+                  if (isInteractiveTarget(event.target)) {
+                    return;
+                  }
+
+                  window.open(item.url, "_blank", "noopener,noreferrer");
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") {
+                    return;
+                  }
+
+                  if (isInteractiveTarget(event.target)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  window.open(item.url, "_blank", "noopener,noreferrer");
+                }}
+                role="link"
+                tabIndex={0}
+              >
                 <a
                   aria-label={`${item.titleKo} 원문 열기`}
                   className="card-link-overlay"
@@ -482,4 +530,11 @@ function modeLabel(mode: DashboardPayload["mode"]) {
     live: "공개 소스 실시간 수집",
     demo: "데모 데이터",
   }[mode];
+}
+function isInteractiveTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return Boolean(target.closest("button, a, input, select, textarea, label"));
 }
