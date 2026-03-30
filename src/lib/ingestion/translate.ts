@@ -7,35 +7,41 @@ export async function translateCollectedNews(items: CollectedNewsItem[]) {
     return items.map((item) => ({
       ...item,
       titleKo: item.title,
-      summaryKo: `자동 번역을 사용하려면 OPENAI_API_KEY 를 설정하세요. ${item.summary}`,
+      summaryKo: item.summary,
     }));
   }
 
   const limit = Number(process.env.OPENAI_TRANSLATION_LIMIT ?? "12");
-  const translatedItems: CollectedNewsItem[] = [];
+  const concurrency = Number(process.env.OPENAI_TRANSLATION_CONCURRENCY ?? "4");
+  const translatable = items.slice(0, limit);
+  const overflow = items.slice(limit).map((item) => ({
+    ...item,
+    titleKo: item.title,
+    summaryKo: item.summary,
+  }));
 
-  for (const item of items) {
-    if (translatedItems.length >= limit) {
-      translatedItems.push({
-        ...item,
-        titleKo: item.title,
-        summaryKo: `번역 한도 초과로 원문을 유지합니다. ${item.summary}`,
-      });
-      continue;
-    }
+  const translated: CollectedNewsItem[] = [];
 
-    const translated = await translateOne(item).catch(() => ({
-      titleKo: item.title,
-      summaryKo: `자동 번역 실패로 원문을 유지합니다. ${item.summary}`,
-    }));
+  for (let start = 0; start < translatable.length; start += concurrency) {
+    const chunk = translatable.slice(start, start + concurrency);
+    const results = await Promise.all(
+      chunk.map(async (item) => {
+        const translatedItem = await translateOne(item).catch(() => ({
+          titleKo: item.title,
+          summaryKo: item.summary,
+        }));
 
-    translatedItems.push({
-      ...item,
-      ...translated,
-    });
+        return {
+          ...item,
+          ...translatedItem,
+        };
+      }),
+    );
+
+    translated.push(...results);
   }
 
-  return translatedItems;
+  return [...translated, ...overflow];
 }
 
 async function translateOne(item: CollectedNewsItem) {

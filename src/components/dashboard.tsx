@@ -199,6 +199,14 @@ export function Dashboard({ initialData }: DashboardProps) {
               `CRON_SECRET` 이 설정되면 동기화 API 는 인증된 요청만 허용합니다.
             </p>
           ) : null}
+
+          {initialData.mode === "demo" ? (
+            <p className="body-copy">
+              첫 배포 직후에는 빌드 속도를 안정적으로 유지하기 위해 데모 데이터가
+              먼저 보일 수 있습니다. 이후 Cron 이 `/api/news/sync` 를 실행하면
+              Supabase 저장 데이터로 바뀝니다.
+            </p>
+          ) : null}
         </section>
 
         <section className="hero-grid" id="dashboard">

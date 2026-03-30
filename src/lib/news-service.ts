@@ -36,6 +36,10 @@ export async function getDashboardPayload(): Promise<DashboardPayload> {
     }
   }
 
+  if (shouldSkipLiveCollectionDuringRender()) {
+    return createDemoPayload("첫 동기화 전이어서 데모 데이터를 표시합니다.");
+  }
+
   const live = await collectLiveDashboardPayload();
   return live;
 }
@@ -70,21 +74,7 @@ async function collectLiveDashboardPayload(): Promise<DashboardPayload> {
       lastSyncedAt: liveItems[0]?.lastUpdatedAt,
     };
   } catch {
-    return {
-      items: mockNewsItems,
-      sources: defaultSources,
-      history: buildFallbackHistory(mockNewsItems),
-      mode: "demo",
-      syncEnabled: false,
-      manualSyncEnabled: isManualSyncEnabled(),
-      collectorStatus: promotionCandidates.map((candidate) => ({
-        slug: candidate.id,
-        label: candidate.name,
-        collected: 0,
-        note: candidate.reason,
-      })),
-      lastSyncedAt: mockNewsItems[0]?.lastUpdatedAt,
-    };
+    return createDemoPayload("실시간 수집에 실패해 데모 데이터를 표시합니다.");
   }
 }
 
@@ -107,4 +97,38 @@ function mapCollectedItemsToNews(items: Awaited<ReturnType<typeof translateColle
   }));
 
   return annotatePredictions(baseItems, seedProfile) as NewsItem[];
+}
+
+function shouldSkipLiveCollectionDuringRender() {
+  return (
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL === "1" ||
+    process.env.CI === "true"
+  );
+}
+
+function createDemoPayload(note: string): DashboardPayload {
+  return {
+    items: mockNewsItems,
+    sources: defaultSources,
+    history: buildFallbackHistory(mockNewsItems),
+    mode: "demo",
+    syncEnabled: true,
+    manualSyncEnabled: isManualSyncEnabled(),
+    collectorStatus: [
+      {
+        slug: "bootstrap",
+        label: "초기 상태",
+        collected: 0,
+        note,
+      },
+      ...promotionCandidates.map((candidate) => ({
+        slug: candidate.id,
+        label: candidate.name,
+        collected: 0,
+        note: candidate.reason,
+      })),
+    ],
+    lastSyncedAt: mockNewsItems[0]?.lastUpdatedAt,
+  };
 }
