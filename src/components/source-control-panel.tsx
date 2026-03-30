@@ -1,6 +1,16 @@
 "use client";
 
+import { ArrowDownRight, ArrowUpRight, Pin, Radar } from "lucide-react";
 import { PromotionCandidate, SourceDefinition } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type SourceControlPanelProps = {
   prioritySources: SourceDefinition[];
@@ -18,81 +28,100 @@ export function SourceControlPanel({
   onDemote,
 }: SourceControlPanelProps) {
   return (
-    <div className="stack">
-      <div className="source-grid">
-        <section className="source-card">
-          <span className="mini-label">최우선 매체</span>
-          <h3>즉시 반응이 필요한 소스</h3>
-          <p className="body-copy">
-            우선 수집 대상입니다. X, GitHub, Reddit, Claude, Codex, ChatGPT,
-            OpenAI, Anthropic을 기본 탑재했습니다.
-          </p>
-
-          <div className="stack">
-            {prioritySources.map((source) => (
-              <div className="history-item" key={source.id}>
-                <div className="inline-row">
-                  <span className="priority-badge priority">{source.name}</span>
-                  <span className="pill">{source.domain}</span>
-                </div>
-                <p className="body-copy">{source.rationale}</p>
-                <div className="source-actions">
-                  <button
-                    className="action-chip"
-                    onClick={() => onDemote(source.id)}
-                    type="button"
-                  >
-                    강등
-                  </button>
-                </div>
-              </div>
-            ))}
+    <div className="grid gap-4 xl:grid-cols-2">
+      <Card className="border-border/70 shadow-sm">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">최우선 소스</Badge>
+            <Badge variant="outline">{prioritySources.length}개</Badge>
           </div>
-        </section>
+          <CardTitle>즉시 체크할 핵심 매체</CardTitle>
+          <CardDescription>
+            반응 속도가 빠르고, 제품 및 릴리스 업데이트가 자주 올라오는 소스입니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {prioritySources.map((source) => (
+            <div
+              className="rounded-2xl border border-border/70 bg-muted/30 p-4"
+              key={source.id}
+            >
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <Badge className="gap-1" variant="default">
+                  <Pin className="size-3" />
+                  {source.name}
+                </Badge>
+                <Badge variant="outline">{source.domain}</Badge>
+              </div>
+              <p className="mb-3 text-sm leading-6 text-muted-foreground">
+                {source.rationale}
+              </p>
+              <Button
+                onClick={() => onDemote(source.id)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <ArrowDownRight className="size-4" />
+                watchlist로 내리기
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
-        <section className="source-card">
-          <span className="mini-label">추가 관찰</span>
-          <h3>반복 노출 매체와 승격 후보</h3>
-          <p className="body-copy">
-            특정 매체가 자주 반복되면 승격 후보로 띄우고, 이후 최우선 매체로
-            올릴지 확인하도록 설계했습니다.
-          </p>
-
-          <div className="stack">
+      <Card className="border-border/70 shadow-sm">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">승격 후보</Badge>
+            <Badge variant="outline">{candidates.length}개</Badge>
+          </div>
+          <CardTitle>반복 노출 소스 관리</CardTitle>
+          <CardDescription>
+            자주 등장하는 소스는 우선 승격 후보로 올리고, 필요할 때 최우선으로 올립니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
             {candidates.map((candidate) => (
-              <div className="history-item" key={candidate.id}>
-                <div className="inline-row">
-                  <span className="pill gold">
+              <div
+                className="rounded-2xl border border-border/70 bg-muted/30 p-4"
+                key={candidate.id}
+              >
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <Badge className="gap-1" variant="secondary">
+                    <Radar className="size-3" />
                     반복 노출 {candidate.repeatCount}회
-                  </span>
-                  <span className="pill">{candidate.name}</span>
+                  </Badge>
+                  <Badge variant="outline">{candidate.name}</Badge>
                 </div>
-                <p className="body-copy">{candidate.reason}</p>
-                <div className="source-actions">
-                  <button
-                    className="action-chip is-active"
-                    onClick={() => onPromote(candidate.id)}
-                    type="button"
-                  >
-                    최우선으로 승격
-                  </button>
-                </div>
+                <p className="mb-3 text-sm leading-6 text-muted-foreground">
+                  {candidate.reason}
+                </p>
+                <Button
+                  onClick={() => onPromote(candidate.id)}
+                  size="sm"
+                  type="button"
+                >
+                  <ArrowUpRight className="size-4" />
+                  최우선으로 승격
+                </Button>
               </div>
             ))}
           </div>
 
-          <div className="divider" />
-
-          <span className="mini-label">보조 관찰 소스</span>
-          <div className="inline-row">
-            {watchlistSources.map((source) => (
-              <span className="pill berry" key={source.id}>
-                {source.name}
-              </span>
-            ))}
+          <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4">
+            <p className="mb-3 text-sm font-medium text-foreground">watchlist</p>
+            <div className="flex flex-wrap gap-2">
+              {watchlistSources.map((source) => (
+                <Badge key={source.id} variant="outline">
+                  {source.name}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </section>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

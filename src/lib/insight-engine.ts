@@ -53,10 +53,7 @@ export function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
-export function annotatePredictions(
-  items: NewsItem[],
-  profile: UserInterestProfile,
-) {
+export function annotatePredictions(items: NewsItem[], profile: UserInterestProfile) {
   return items.map((item) => ({
     ...item,
     predictedInterest: predictInterest(item, profile),
@@ -139,29 +136,26 @@ export function createSeedHistory(items: NewsItem[]): RatingEvent[] {
 }
 
 export function buildRecommendationReason(item: NewsItem) {
-  const reasons = [];
+  const reasons: string[] = [];
 
   if (item.engagement.velocity >= 90) {
-    reasons.push("반응 속도가 매우 빠릅니다");
+    reasons.push("최근 반응 속도가 매우 빠릅니다.");
   }
 
   if (item.crossSignalCount >= 6) {
-    reasons.push("여러 커뮤니티에서 동시에 언급됩니다");
+    reasons.push("여러 커뮤니티와 매체에서 동시에 언급되고 있습니다.");
   }
 
   if ((item.predictedInterest?.level ?? "hold") === "breakthrough") {
-    reasons.push("사용자 관심사와 강하게 맞습니다");
+    reasons.push("사용자 관심사와 매우 강하게 맞습니다.");
   } else if ((item.predictedInterest?.level ?? "hold") === "interested") {
-    reasons.push("사용자 관심사와 관련성이 높습니다");
+    reasons.push("사용자 관심사와 높은 관련성이 있습니다.");
   }
 
-  return reasons.slice(0, 2).join(" · ") || "최신 반응이 안정적으로 쌓이는 이슈입니다";
+  return reasons.slice(0, 2).join(" ") || "최신 반응과 교차 신호를 종합해 추천된 뉴스입니다.";
 }
 
-function predictInterest(
-  item: NewsItem,
-  profile: UserInterestProfile,
-): InterestPrediction {
+function predictInterest(item: NewsItem, profile: UserInterestProfile): InterestPrediction {
   const haystack = `${item.title} ${item.summary} ${item.tags.join(" ")} ${item.sourceName}`.toLowerCase();
   const matchedKeywords = profile.keywords.filter((keyword) =>
     haystack.includes(keyword.toLowerCase()),
@@ -189,10 +183,10 @@ function predictInterest(
 
   const reason =
     matchedKeywords.length > 0
-      ? `관심 키워드 ${matchedKeywords.slice(0, 2).join(", ")} 와 직접 연결됩니다`
+      ? `관심 키워드 ${matchedKeywords.slice(0, 2).join(", ")} 와 직접 연결됩니다.`
       : profile.preferredSources.includes(item.sourceId)
-        ? `${item.sourceName} 는 우선 추적 소스로 등록되어 있습니다`
-        : "반응 속도와 교차 언급량이 평균보다 높습니다";
+        ? `${item.sourceName}는 현재 우선 추적 중인 소스입니다.`
+        : "반응 속도와 교차 언급 수치가 평균보다 높습니다.";
 
   return {
     level,
@@ -215,7 +209,5 @@ function computeHighlightScore(item: NewsItem) {
 }
 
 function sortByFreshness(a: NewsItem, b: NewsItem) {
-  return (
-    new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime()
-  );
+  return new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime();
 }

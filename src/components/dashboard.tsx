@@ -2,11 +2,31 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Activity,
+  ArrowUpRight,
+  BrainCircuit,
+  Flame,
+  RefreshCcw,
+  Sparkles,
+  Star,
+} from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { ArchiveHistory } from "@/components/archive-history";
 import { FilterBar } from "@/components/filter-bar";
 import { NewsFeed } from "@/components/news-feed";
 import { SourceControlPanel } from "@/components/source-control-panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import {
   buildBreakingNews,
   buildDailyHighlights,
@@ -28,6 +48,8 @@ import {
 type DashboardProps = {
   initialData: DashboardPayload;
 };
+
+const seedTopics = ["Claude Mythos", "GitHub Impeccable", "Codex", "클로드코드 업데이트"];
 
 export function Dashboard({ initialData }: DashboardProps) {
   const router = useRouter();
@@ -125,7 +147,7 @@ export function Dashboard({ initialData }: DashboardProps) {
         domain: matchedCandidate.domain,
         channel: "watch",
         tier: "priority",
-        rationale: `반복 노출 ${matchedCandidate.repeatCount}회로 최우선 승격 후보로 채택`,
+        rationale: `반복 노출 ${matchedCandidate.repeatCount}회로 최우선 후보에 올렸습니다.`,
       },
     ]);
 
@@ -153,371 +175,289 @@ export function Dashboard({ initialData }: DashboardProps) {
 
   return (
     <AppShell>
-      <main className="stack">
-        <section className="panel">
-          <div className="panel-header">
-            <div>
-              <span className="mini-label">Sync Status</span>
-              <h2 className="section-title">실데이터 동기화 상태</h2>
-              <p className="section-copy">
-                현재 데이터 모드 <strong>{modeLabel(initialData.mode)}</strong>
-                {initialData.lastSyncedAt
-                  ? ` · 최근 기준 ${formatDateTime(initialData.lastSyncedAt)}`
-                  : ""}
-              </p>
-            </div>
-
-            <button
-              className={`action-chip ${isSyncing ? "is-active" : ""}`}
-              disabled={
-                !initialData.syncEnabled ||
-                !initialData.manualSyncEnabled ||
-                isSyncing
-              }
-              onClick={handleSync}
-              type="button"
-            >
-              {initialData.manualSyncEnabled
-                ? isSyncing
-                  ? "동기화 중..."
-                  : "지금 동기화"
-                : "배포 후 Cron 자동동기화"}
-            </button>
-          </div>
-
-          <div className="meta-badges">
-            {initialData.collectorStatus.map((status) => (
-              <span className="pill" key={status.slug}>
-                {status.label} {status.collected}건
-              </span>
-            ))}
-          </div>
-
-          {!initialData.manualSyncEnabled ? (
-            <p className="body-copy">
-              운영 배포에서는 수동 버튼 대신 Vercel Cron 이 자동으로 수집합니다.
-              `CRON_SECRET` 이 설정되면 동기화 API 는 인증된 요청만 허용합니다.
-            </p>
-          ) : null}
-
-          {initialData.mode === "demo" ? (
-            <p className="body-copy">
-              첫 배포 직후에는 빌드 속도를 안정적으로 유지하기 위해 데모 데이터가
-              먼저 보일 수 있습니다. 이후 Cron 이 `/api/news/sync` 를 실행하면
-              Supabase 저장 데이터로 바뀝니다.
-            </p>
-          ) : null}
-        </section>
-
-        <section className="hero-grid" id="dashboard">
-          <div className="panel">
-            <span className="eyebrow">Realtime AI Briefing</span>
-            <h2 className="hero-title">
-              빠르게 쏟아지는 AI 뉴스를
-              <br />
-              한국어로 정리하고,
-              <br />
-              관심도까지 바로 기록합니다.
-            </h2>
-            <p className="lede">
-              실시간 핵심 뉴스, 오늘의 하이라이트, 최신 피드, 관심도 예측,
-              우선 소스 관리까지 한 화면에서 다루는 개인용 AI 뉴스 레이더입니다.
-              Supabase가 연결되면 저장형으로, 아니면 공개 소스 실시간 수집형으로
-              동작합니다.
-            </p>
-
-            <div className="summary-grid">
-              <div className="summary-card">
-                <span className="mini-label">실시간 핵심 뉴스</span>
-                <strong>{breakingNews.length}</strong>
-                <p className="body-copy">
-                  최근 1시간 안에 반응 속도가 높은 이슈만 추렸습니다.
-                </p>
+      <main className="space-y-6">
+        <section className="grid gap-4 xl:grid-cols-[1.7fr_1fr]" id="dashboard">
+          <Card className="border-border/70 shadow-sm">
+            <CardHeader className="gap-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">Realtime AI Briefing</Badge>
+                <Badge variant="outline">{modeLabel(initialData.mode)}</Badge>
+                {initialData.lastSyncedAt ? (
+                  <Badge variant="outline">
+                    최근 수집 {formatDateTime(initialData.lastSyncedAt)}
+                  </Badge>
+                ) : null}
               </div>
-              <div className="summary-card">
-                <span className="mini-label">예측 관심 고점</span>
-                <strong>{predictedHighInterest.length}</strong>
-                <p className="body-copy">
-                  혁신 또는 관심으로 예측된 뉴스 수입니다.
-                </p>
-              </div>
-              <div className="summary-card">
-                <span className="mini-label">최우선 소스</span>
-                <strong>{prioritySources.length}</strong>
-                <p className="body-copy">
-                  반복 노출 매체는 승격 후보로 자동 제안됩니다.
-                </p>
-              </div>
-            </div>
-          </div>
 
-          <aside className="panel">
-            <div className="panel-header">
-              <div>
-                <span className="mini-label">초기 관심사</span>
-                <h2 className="section-title">추천 기준 시드</h2>
-              </div>
-              <span className="status-chip is-active">1인 전용</span>
-            </div>
-
-            <div className="meta-badges">
-              <span className="pill accent">Claude Mythos</span>
-              <span className="pill forest">GitHub Impeccable</span>
-              <span className="pill berry">Codex</span>
-              <span className="pill gold">클로드코드 업데이트</span>
-            </div>
-
-            <div className="metrics-grid">
-              <div className="metric-card">
-                <span className="mini-label">오늘의 하이라이트</span>
-                <strong>{dailyHighlights[0]?.sourceName ?? "없음"}</strong>
-                <p className="body-copy">
-                  {dailyHighlights[0]?.reason ??
-                    "하이라이트 판단에 충분한 데이터가 아직 없습니다."}
-                </p>
-              </div>
-              <div className="metric-card">
-                <span className="mini-label">다음 추천 개선</span>
-                <strong>행동 기록 누적</strong>
-                <p className="body-copy">
-                  관심도 변경 시각을 이벤트 로그로 남겨 추천 기준을 계속 조정합니다.
-                </p>
-              </div>
-            </div>
-          </aside>
-        </section>
-
-        <section className="panel">
-          <div className="panel-header">
-            <div>
-              <span className="mini-label">Breaking Now</span>
-              <h2 className="section-title">실시간 핵심 뉴스</h2>
-              <p className="section-copy">
-                단순 최신순이 아니라 최근 1시간 내 반응 속도, 교차 언급량,
-                사용자 관심사 적합도를 함께 반영합니다.
-              </p>
-            </div>
-          </div>
-
-          <div className="breaking-grid">
-            {breakingNews.map((item) => (
-              <article
-                className="highlight-card is-clickable"
-                key={item.id}
-                onClick={(event) => {
-                  if (isInteractiveTarget(event.target)) {
-                    return;
-                  }
-
-                  window.open(item.url, "_blank", "noopener,noreferrer");
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") {
-                    return;
-                  }
-
-                  if (isInteractiveTarget(event.target)) {
-                    return;
-                  }
-
-                  event.preventDefault();
-                  window.open(item.url, "_blank", "noopener,noreferrer");
-                }}
-                role="link"
-                tabIndex={0}
-              >
-                <a
-                  aria-label={`${item.titleKo} 원문 열기`}
-                  className="card-link-overlay"
-                  href={item.url}
-                  rel="noreferrer"
-                  target="_blank"
-                />
-                <div className="card-layer">
-                  <div className="inline-row">
-                    <span className="pill accent">{item.sourceName}</span>
-                    <span className="pill forest">
-                      급상승 {item.engagement.velocity}
-                    </span>
-                    <span className="pill">
-                      {formatDateTime(item.lastUpdatedAt)}
-                    </span>
+              <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <CardTitle className="text-4xl leading-tight sm:text-5xl">
+                      빠르게 쏟아지는 AI 뉴스를
+                      <br />
+                      한국어로 정리하고,
+                      <br />
+                      관심도까지 바로 기록합니다.
+                    </CardTitle>
+                    <CardDescription className="max-w-2xl text-base leading-7 text-muted-foreground">
+                      실시간 핵심 뉴스, 오늘의 하이라이트, 최신 피드, 관심도 아카이빙,
+                      주요 소스 관리까지 한 화면에서 볼 수 있게 구성했습니다.
+                    </CardDescription>
                   </div>
-                  <h3>{item.titleKo}</h3>
-                  <p className="body-copy">{item.summaryKo}</p>
-                  <div className="divider" />
-                  <span className="mini-label">추천 이유</span>
-                  <p className="body-copy">{item.reason}</p>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <MetricCard
+                      label="실시간 핵심 뉴스"
+                      value={String(breakingNews.length)}
+                      description="최근 1시간 기준으로 반응 속도가 높은 뉴스만 압축합니다."
+                      icon={Flame}
+                    />
+                    <MetricCard
+                      label="고관심 예측"
+                      value={String(predictedHighInterest.length)}
+                      description="혁신 또는 관심으로 예측된 뉴스를 빠르게 확인할 수 있습니다."
+                      icon={Sparkles}
+                    />
+                    <MetricCard
+                      label="최우선 소스"
+                      value={String(prioritySources.length)}
+                      description="자주 등장하는 핵심 매체를 최우선 리스트로 관리합니다."
+                      icon={Star}
+                    />
+                  </div>
                 </div>
-              </article>
-            ))}
-          </div>
+
+                <div className="rounded-3xl border border-border/70 bg-muted/35 p-4">
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <Badge variant="outline">Sync Status</Badge>
+                      <h2 className="text-lg font-semibold">수집 상태</h2>
+                      <p className="text-sm leading-6 text-muted-foreground">
+                        운영 배포에서는 Cron 기반 자동 수집을 기본으로 사용합니다.
+                      </p>
+                    </div>
+                    <Button
+                      disabled={
+                        !initialData.syncEnabled ||
+                        !initialData.manualSyncEnabled ||
+                        isSyncing
+                      }
+                      onClick={handleSync}
+                      size="sm"
+                      type="button"
+                      variant={initialData.manualSyncEnabled ? "default" : "outline"}
+                    >
+                      <RefreshCcw className={`size-4 ${isSyncing ? "animate-spin" : ""}`} />
+                      {initialData.manualSyncEnabled
+                        ? isSyncing
+                          ? "동기화 중"
+                          : "지금 동기화"
+                        : "Cron 자동 동기화"}
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {initialData.collectorStatus.map((status) => (
+                      <Badge className="rounded-full" key={status.slug} variant="outline">
+                        {status.label} {status.collected}건
+                      </Badge>
+                    ))}
+                  </div>
+
+                  <Separator className="my-4" />
+
+                  <div className="space-y-3">
+                    {!initialData.manualSyncEnabled ? (
+                      <p className="text-sm leading-6 text-muted-foreground">
+                        운영 환경에서는 수동 버튼 대신 Vercel Cron이 `/api/news/sync`를 호출합니다.
+                        `CRON_SECRET`이 있으면 인증된 요청만 허용됩니다.
+                      </p>
+                    ) : null}
+
+                    {initialData.mode === "demo" ? (
+                      <p className="text-sm leading-6 text-muted-foreground">
+                        첫 배포 직후에는 데모 데이터가 먼저 보일 수 있습니다. 이후 Cron 또는
+                        수동 sync가 실행되면 Supabase 저장 데이터로 전환됩니다.
+                      </p>
+                    ) : null}
+
+                    <div className="rounded-2xl bg-background/80 p-4">
+                      <p className="mb-2 text-sm font-medium text-foreground">초기 관심 시드</p>
+                      <div className="flex flex-wrap gap-2">
+                        {seedTopics.map((topic) => (
+                          <Badge key={topic} variant="secondary">
+                            {topic}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-border/70 shadow-sm">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">추천 시드</Badge>
+                <Badge variant="outline">초기 설정 반영</Badge>
+              </div>
+              <CardTitle>오늘 가장 먼저 볼 만한 포인트</CardTitle>
+              <CardDescription>
+                당신이 관심 가질 확률이 높은 주제와 오늘의 대표 뉴스 흐름을 한 번에 보여줍니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-2xl bg-muted/35 p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <Flame className="size-4 text-primary" />
+                  <p className="text-sm font-medium text-foreground">오늘의 대표 소스</p>
+                </div>
+                <p className="text-lg font-semibold text-foreground">
+                  {dailyHighlights[0]?.sourceName ?? "아직 없음"}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {dailyHighlights[0]?.reason ??
+                    "하이라이트를 계산할 만큼 충분한 데이터가 아직 모이지 않았습니다."}
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-muted/35 p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <BrainCircuit className="size-4 text-primary" />
+                  <p className="text-sm font-medium text-foreground">다음 추천 개선 포인트</p>
+                </div>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  관심도 변경 시각과 선택 로그가 누적되면서 예측 이유와 추천 우선순위가 더 정교해집니다.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </section>
 
-        <section className="panel">
-          <div className="panel-header">
-            <div>
-              <span className="mini-label">Today's Highlight</span>
-              <h2 className="section-title">오늘의 하이라이트</h2>
-              <p className="section-copy">
-                오늘 날짜 기준 가장 뜨겁거나, 사용자가 관심있어 할 가능성이 높은
-                소식을 우선 노출합니다.
-              </p>
-            </div>
-          </div>
-
-          <div className="highlight-grid">
-            {dailyHighlights.map((item) => (
-              <article
-                className="highlight-card is-clickable"
-                key={item.id}
-                onClick={(event) => {
-                  if (isInteractiveTarget(event.target)) {
-                    return;
-                  }
-
-                  window.open(item.url, "_blank", "noopener,noreferrer");
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") {
-                    return;
-                  }
-
-                  if (isInteractiveTarget(event.target)) {
-                    return;
-                  }
-
-                  event.preventDefault();
-                  window.open(item.url, "_blank", "noopener,noreferrer");
-                }}
-                role="link"
-                tabIndex={0}
-              >
-                <a
-                  aria-label={`${item.titleKo} 원문 열기`}
-                  className="card-link-overlay"
-                  href={item.url}
-                  rel="noreferrer"
-                  target="_blank"
+        <section className="grid gap-4 xl:grid-cols-2">
+          <Card className="border-border/70 shadow-sm">
+            <CardHeader>
+              <CardTitle>실시간 핵심 뉴스</CardTitle>
+              <CardDescription>
+                최근 1시간 기준으로 반응 속도, 교차 언급 수, 관심사 적합도를 함께 반영합니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              {breakingNews.map((item) => (
+                <StoryCard
+                  key={item.id}
+                  kicker={item.sourceName}
+                  metadata={[
+                    `속도 ${item.engagement.velocity}`,
+                    formatDateTime(item.lastUpdatedAt),
+                  ]}
+                  reason={item.reason}
+                  summary={item.summaryKo}
+                  title={item.titleKo}
+                  url={item.url}
                 />
-                <div className="card-layer">
-                  <div className="inline-row">
-                    <span className="pill accent">{item.sourceName}</span>
-                    <span className="pill berry">
-                      예측 {labelForInterest(item.predictedInterest?.level ?? "hold")}
-                    </span>
-                  </div>
-                  <h3>{item.titleKo}</h3>
-                  <p className="body-copy">{item.summaryKo}</p>
-                  <div className="divider" />
-                  <span className="mini-label">한 줄 이유</span>
-                  <p className="body-copy">
-                    {item.predictedInterest?.level === "interested" ||
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70 shadow-sm">
+            <CardHeader>
+              <CardTitle>오늘의 하이라이트</CardTitle>
+              <CardDescription>
+                오늘 날짜 기준으로 가장 뜨겁거나, 당신이 특히 좋아할 가능성이 높은 뉴스를 추천합니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              {dailyHighlights.map((item) => (
+                <StoryCard
+                  key={item.id}
+                  kicker={`${item.sourceName} · 예측 ${labelForInterest(item.predictedInterest?.level ?? "hold")}`}
+                  metadata={[formatDateTime(item.lastUpdatedAt)]}
+                  reason={
+                    item.predictedInterest?.level === "interested" ||
                     item.predictedInterest?.level === "breakthrough"
                       ? item.predictedInterest.reason
-                      : buildRecommendationReason(item)}
-                  </p>
-                </div>
-              </article>
-            ))}
+                      : buildRecommendationReason(item)
+                  }
+                  summary={item.summaryKo}
+                  title={item.titleKo}
+                  url={item.url}
+                />
+              ))}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-[1.55fr_0.95fr]" id="feed">
+          <Card className="border-border/70 shadow-sm">
+            <CardHeader>
+              <CardTitle>New Feed</CardTitle>
+              <CardDescription>
+                추천 여부와 관계없이 최신순으로 정렬하고, 바로 관심 단계를 지정할 수 있습니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FilterBar
+                activeRange={timeRange}
+                onRangeChange={setTimeRange}
+                onSearchChange={setSearchQuery}
+                searchQuery={searchQuery}
+              />
+              <NewsFeed items={filteredItems} onInterestChange={handleInterestChange} />
+            </CardContent>
+          </Card>
+
+          <div className="space-y-4" id="archive">
+            <Card className="border-border/70 shadow-sm">
+              <CardHeader>
+                <CardTitle>아카이브 상태</CardTitle>
+                <CardDescription>
+                  클릭 한 번으로 나눈 관심도 버킷 현황입니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2">
+                <ArchiveCountCard label="관심없음" value={archiveCounts.ignore} />
+                <ArchiveCountCard label="보류" value={archiveCounts.hold} />
+                <ArchiveCountCard label="참고" value={archiveCounts.reference} />
+                <ArchiveCountCard label="관심" value={archiveCounts.interested} />
+                <ArchiveCountCard label="혁신" value={archiveCounts.breakthrough} />
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/70 shadow-sm">
+              <CardHeader>
+                <CardTitle>관심도 변경 기록</CardTitle>
+                <CardDescription>
+                  추천 알고리즘 개선을 위해 뉴스별 관심도 변경 시각을 이벤트로 남깁니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ArchiveHistory history={history} />
+              </CardContent>
+            </Card>
           </div>
         </section>
 
-        <section className="content-grid" id="feed">
-          <div className="panel feed-column">
-            <div className="panel-header">
-              <div>
-                <span className="mini-label">New Feed</span>
-                <h2 className="section-title">최신 뉴스 피드</h2>
-                <p className="section-copy">
-                  추천 여부와 별개로 최신순으로 정렬하고, 바로 관심 단계를 기록할
-                  수 있도록 설계했습니다.
-                </p>
-              </div>
-            </div>
-
-            <FilterBar
-              activeRange={timeRange}
-              onRangeChange={setTimeRange}
-              onSearchChange={setSearchQuery}
-              searchQuery={searchQuery}
-            />
-
-            <NewsFeed
-              items={filteredItems}
-              onInterestChange={handleInterestChange}
-            />
-          </div>
-
-          <div className="stack" id="archive">
-            <section className="panel">
-              <div className="panel-header">
-                <div>
-                  <span className="mini-label">Archive Buckets</span>
-                  <h2 className="section-title">아카이브 상태</h2>
-                </div>
-              </div>
-
-              <div className="archive-grid">
-                <div className="archive-card">
-                  <span className="mini-label">관심없음</span>
-                  <h3>{archiveCounts.ignore}</h3>
-                </div>
-                <div className="archive-card">
-                  <span className="mini-label">보류</span>
-                  <h3>{archiveCounts.hold}</h3>
-                </div>
-                <div className="archive-card">
-                  <span className="mini-label">참고</span>
-                  <h3>{archiveCounts.reference}</h3>
-                </div>
-                <div className="archive-card">
-                  <span className="mini-label">관심</span>
-                  <h3>{archiveCounts.interested}</h3>
-                </div>
-                <div className="archive-card">
-                  <span className="mini-label">혁신</span>
-                  <h3>{archiveCounts.breakthrough}</h3>
-                </div>
-              </div>
-            </section>
-
-            <section className="panel">
-              <div className="panel-header">
-                <div>
-                  <span className="mini-label">Interest Log</span>
-                  <h2 className="section-title">관심도 변경 기록</h2>
-                  <p className="section-copy">
-                    검색 알고리즘 개선을 위해 어떤 뉴스의 관심 단계를 언제 바꿨는지
-                    이벤트 단위로 남깁니다.
-                  </p>
-                </div>
-              </div>
-
-              <ArchiveHistory history={history} />
-            </section>
-          </div>
-        </section>
-
-        <section className="panel" id="sources">
-          <div className="panel-header">
-            <div>
-              <span className="mini-label">Source Control</span>
-              <h2 className="section-title">최우선 매체 관리</h2>
-              <p className="section-copy">
-                반복되는 주요 매체는 승격 후보로 올리고, 언제든 강등하거나 수정할
-                수 있도록 준비했습니다.
-              </p>
-            </div>
-          </div>
-
-          <SourceControlPanel
-            candidates={candidates}
-            onDemote={handleDemote}
-            onPromote={handlePromote}
-            prioritySources={prioritySources}
-            watchlistSources={watchlistSources}
-          />
+        <section id="sources">
+          <Card className="border-border/70 shadow-sm">
+            <CardHeader>
+              <CardTitle>최우선 매체 관리</CardTitle>
+              <CardDescription>
+                자주 반복되는 중요한 매체를 승격하고, 필요하면 언제든 강등하거나 watchlist로 이동할 수 있습니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SourceControlPanel
+                candidates={candidates}
+                onDemote={handleDemote}
+                onPromote={handlePromote}
+                prioritySources={prioritySources}
+                watchlistSources={watchlistSources}
+              />
+            </CardContent>
+          </Card>
         </section>
       </main>
     </AppShell>
@@ -527,14 +467,83 @@ export function Dashboard({ initialData }: DashboardProps) {
 function modeLabel(mode: DashboardPayload["mode"]) {
   return {
     supabase: "Supabase 저장 데이터",
-    live: "공개 소스 실시간 수집",
+    live: "실시간 공개 소스",
     demo: "데모 데이터",
   }[mode];
 }
-function isInteractiveTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
 
-  return Boolean(target.closest("button, a, input, select, textarea, label"));
+function MetricCard({
+  label,
+  value,
+  description,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  description: string;
+  icon: typeof Activity;
+}) {
+  return (
+    <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <Badge variant="outline">{label}</Badge>
+        <Icon className="size-4 text-primary" />
+      </div>
+      <p className="text-3xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+function StoryCard({
+  kicker,
+  title,
+  summary,
+  reason,
+  metadata,
+  url,
+}: {
+  kicker: string;
+  title: string;
+  summary: string;
+  reason: string;
+  metadata: string[];
+  url: string;
+}) {
+  return (
+    <div className="rounded-3xl border border-border/70 bg-muted/25 p-5 shadow-sm">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <Badge variant="secondary">{kicker}</Badge>
+        <a
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition hover:text-foreground"
+          href={url}
+          rel="noreferrer"
+          target="_blank"
+        >
+          원문
+          <ArrowUpRight className="size-4" />
+        </a>
+      </div>
+      <h3 className="text-lg font-semibold leading-7 text-foreground">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{summary}</p>
+      <Separator className="my-4" />
+      <p className="text-sm leading-6 text-foreground">{reason}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {metadata.map((entry) => (
+          <Badge key={entry} variant="outline">
+            {entry}
+          </Badge>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ArchiveCountCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-border/70 bg-muted/25 p-4">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+    </div>
+  );
 }

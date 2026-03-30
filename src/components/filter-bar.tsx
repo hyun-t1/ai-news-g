@@ -1,7 +1,10 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { labelForTimeRange } from "@/lib/insight-engine";
 import { TimeRangeKey, timeRanges } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type FilterBarProps = {
   activeRange: TimeRangeKey;
@@ -17,28 +20,33 @@ export function FilterBar({
   onRangeChange,
 }: FilterBarProps) {
   return (
-    <div className="filter-bar">
-      <div className="filter-actions">
+    <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-muted/40 p-4">
+      <div className="flex flex-wrap gap-2">
         {timeRanges.map((range) => (
-          <button
+          <Button
+            className="rounded-full"
             key={range}
-            className={`range-button ${range === activeRange ? "is-active" : ""}`}
             onClick={() => onRangeChange(range)}
+            size="sm"
             type="button"
+            variant={range === activeRange ? "default" : "outline"}
           >
             {labelForTimeRange(range)}
-          </button>
+          </Button>
         ))}
       </div>
 
-      <input
-        aria-label="뉴스 검색"
-        className="search-box"
-        onChange={(event) => onSearchChange(event.target.value)}
-        placeholder="키워드, 소스, 태그로 검색"
-        type="search"
-        value={searchQuery}
-      />
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          aria-label="뉴스 검색"
+          className="pl-9"
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="키워드, 태그, 소스 이름으로 검색"
+          type="search"
+          value={searchQuery}
+        />
+      </div>
     </div>
   );
 }
